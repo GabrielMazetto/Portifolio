@@ -15,17 +15,33 @@
       --tag-selected-bg: #fff;
       --tag-selected-text: #555;
     }
+
+    /* Estilos para navegadores baseados em WebKit (Chrome, Safari, Edge mais recente) */
+    ::-webkit-scrollbar {
+        width: 8px; /* Largura da barra de rolagem vertical */
+        height: 8px; /* Altura da barra de rolagem horizontal */
+    }
+    ::-webkit-scrollbar-thumb {
+        background-color: var(--destaque); /* Cor do "polegar" (a parte que você arrasta) */
+        border-radius: 4px; /* Borda arredondada do polegar */
+    }
+    ::-webkit-scrollbar-track {
+        background-color: var(--fundo-secundario); /* Cor do "trilho" da barra de rolagem */
+        border-radius: 4px; /* Borda arredondada do trilho */
+    }
     body {
       margin: 0;
       padding: 0;
       background-color: var(--fundo-principal);
       color: var(--texto-claro);
       font-family: Arial, sans-serif;
+      overflow-x: hidden; /* Esconde a barra de rolagem horizontal */
     }
     header {
       background-color: var(--fundo-secundario);
       padding: 10px 20px;
       text-align: center;
+      width: 100%; 
     }
     header h1 {
       margin: 0;
@@ -38,6 +54,7 @@
       justify-content: center;
       gap: 8px;
       margin-bottom: 20px;
+      padding: 0 80px;
     }
     .tag {
       background-color: var(--tag-bg);
@@ -121,20 +138,8 @@
       border-radius: 4px;
       font-size: 0.8em;
     }
-    /* Detalhe do projeto */
-    #project-detail-view {
-      display: none;
-      padding: 20px;
-    }
-    #back-to-portfolio {
-      margin-bottom: 20px;
-      background-color: var(--fundo-secundario);
-      color: var(--texto-claro);
-      border: none;
-      padding: 8px 12px;
-      border-radius: 4px;
-      cursor: pointer;
-    }
+    
+    /*Texto com tamanho máximo
     #project-detail-container {
       display: flex;
       gap: 20px;
@@ -147,7 +152,44 @@
       padding: 10px;
       border-radius: 8px;
       max-width: 300px;
-    }
+    }*/
+    #project-detail-view {
+        display: none;
+        padding: 20px;
+        width: 100%; /* Garante que a seção ocupe a largura total */
+      }
+      #back-to-portfolio {
+        margin-bottom: 20px;
+        background-color: var(--fundo-secundario);
+        color: var(--texto-claro);
+        border: none;
+        padding: 8px 12px;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+      #project-detail-container {
+        display: flex;
+        flex-direction: row;
+        justify-content: flex-start; /* Alinha os itens à esquerda */
+        gap: 20px;
+        align-items: flex-start;
+        width: 100%; /* Garante que o container flexível ocupe a largura total */
+      }
+      #project-detail-content {
+        width: auto; /* Permite que a largura seja determinada pelo conteúdo e max-width */
+        max-width: 1000px; /* Opcional: defina uma largura máxima */
+        margin: 0 auto; /* Centraliza o conteúdo horizontalmente */
+        flex-grow: 1; /* Permite que o conteúdo cresça para ocupar o espaço disponível */
+      }
+      #project-suggestions {
+        background-color: var(--fundo-secundario);
+        padding: 10px;
+        border-radius: 8px;
+        max-width: 300px;
+        width: 300px; /* Garante que a largura seja respeitada */
+        margin-left: 20px; /* Adiciona uma margem à esquerda para separação */
+        flex-shrink: 0; /* Impede que as sugestões encolham */
+      }
     .suggestion-card {
       background-color: var(--fundo-principal);
       margin-bottom: 10px;
@@ -480,12 +522,14 @@
             if (section.type === 'texto') {
                 let colorStyle = section.color ? `color:${section.color};` : "";
                 let commonStyle = `text-align:${section.align}; font-size:${section.size}px; ${colorStyle}`;
+                // ADICIONADO - Estilo para negrito condicional
+                let fontWeightStyle = section.bold ? `font-weight: bold;` : "";
                 if (section.style === 'titulo') {
-                    html += `<h2 style="${commonStyle} white-space: pre-wrap;">${section.content}</h2>`;
+                    html += `<h2 style="${commonStyle} ${fontWeightStyle} white-space: pre-wrap;">${section.content}</h2>`;
                 } else if (section.style === 'subtitulo') {
-                    html += `<h3 style="${commonStyle} white-space: pre-wrap;">${section.content}</h2>`;
+                    html += `<h3 style="${commonStyle} ${fontWeightStyle} white-space: pre-wrap;">${section.content}</h2>`;
                 } else {
-                    html += `<p style="${commonStyle} white-space: pre-wrap;">${section.content}</p>`;
+                    html += `<p style="${commonStyle} ${fontWeightStyle} white-space: pre-wrap;">${section.content}</p>`;
                 }
             } else if (section.type === 'imagem') {
                 html += `<div style="text-align:${section.imgAlign};"><img src="${section.image}" style="max-width:${section.imgWidth}px; height: ${section.imgHeight}px;" /></div>`;

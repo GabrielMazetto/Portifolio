@@ -344,8 +344,17 @@
                 project.sections = [];
             }
             while (project.sections.length < 2) {
-                project.sections.push({ type: 'texto', content: '', size: 18, align: 'justify', bold: false, color: "#f5f5f5" }); // Adiciona parágrafos padrão se necessário
-            }
+                let newSection = { type: 'texto', content: '', align: 'justify', color: "#f5f5f5" };
+                if (project.sections.length === 0) {
+                    // Se for a primeira seção (título), define bold como true
+                    newSection.bold = true;
+                    newSection.size = 20;
+                } else {
+                    newSection.bold = false; // Para as demais seções, bold como false (descrição, etc.)
+                    newSection.size = 16;
+                }
+                project.sections.push(newSection);
+             }
 
             project.sections.forEach((sec, index) => {
                 const block = document.createElement('div');

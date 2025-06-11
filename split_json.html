@@ -95,15 +95,45 @@
         </div>
         <button id="splitButton">Gerar e Baixar JSONs Particionados</button>
         <div id="download-status">
-            </div>
+        </div>
     </div>
 
     <script>
         document.getElementById('splitButton').addEventListener('click', splitAndDownloadJson);
+        const numberOfJsonFilesInput = document.getElementById('numberOfJsonFiles'); // Guardar referência para o input
+
+        async function initializeMaxFilesInput() {
+            const jsonFileName = document.getElementById('jsonFileName').value;
+            try {
+                const response = await fetch(jsonFileName);
+                if (!response.ok) {
+                    throw new Error(`Erro ao carregar ${jsonFileName}: ${response.statusText}`);
+                }
+                const completeProjects = await response.json();
+
+                if (Array.isArray(completeProjects)) {
+                    const totalProjects = completeProjects.length;
+                    numberOfJsonFilesInput.max = totalProjects; // Define o atributo max
+                    numberOfJsonFilesInput.placeholder = `Máximo: ${totalProjects}`; // Atualiza o placeholder para dica
+                } else {
+                    console.error("O conteúdo do JSON não é um array de projetos.");
+                    numberOfJsonFilesInput.placeholder = "Erro ao carregar projetos";
+                    numberOfJsonFilesInput.disabled = true; // Desabilita o input se der erro
+                }
+            } catch (error) {
+                console.error("Erro ao carregar JSON para contar projetos:", error);
+                numberOfJsonFilesInput.placeholder = "Erro ao carregar projetos";
+                numberOfJsonFilesInput.disabled = true; // Desabilita o input se der erro
+            }
+        }
+
+        // Chamando a função para inicializar o valor máximo do input quando a página carrega
+        initializeMaxFilesInput();
+
 
         async function splitAndDownloadJson() {
             const jsonFileName = document.getElementById('jsonFileName').value;
-            const numberOfJsonFiles = parseInt(document.getElementById('numberOfJsonFiles').value, 10); // Alterado para numberOfJsonFiles
+            const numberOfJsonFiles = parseInt(numberOfJsonFilesInput.value, 10); // Usar a referência guardada
             const downloadStatus = document.getElementById('download-status');
 
             if (!jsonFileName) {
@@ -111,7 +141,7 @@
                 return;
             }
 
-            if (isNaN(numberOfJsonFiles) || numberOfJsonFiles < 1) { // Alterado para numberOfJsonFiles
+            if (isNaN(numberOfJsonFiles) || numberOfJsonFiles < 1) {
                 alert("Por favor, insira um número válido de arquivos JSON (mínimo 1).");
                 return;
             }
