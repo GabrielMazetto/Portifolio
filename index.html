@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Portifólio - Gabriel de Antonio Mazetto</title>
+  <style>
+    :root {
+      --fundo-principal: #2c2c2c;
+      --fundo-secundario: #3a3a3a;
+      --texto-claro: #f5f5f5;
+      --destaque: #cccccc;
+      --sombra: rgba(0, 0, 0, 0.1);
+      --tag-bg: #555;
+      --tag-selected-bg: #fff;
+      --tag-selected-text: #555;
+    }
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: var(--fundo-principal);
+      color: var(--texto-claro);
+      font-family: Arial, sans-serif;
+    }
+    header {
+      background-color: var(--fundo-secundario);
+      padding: 10px 20px;
+      text-align: center;
+    }
+    header h1 {
+      margin: 0;
+      padding-bottom: 10px;
+    }
+    /* Barra de tags */
+    #tag-bar {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+    .tag {
+      background-color: var(--tag-bg);
+      color: var(--texto-claro);
+      padding: 4px 8px;
+      border-radius: 12px;
+      cursor: pointer;
+      font-size: 0.9em;
+      transition: background-color 0.2s, color 0.2s;
+    }
+    .tag.selected {
+      background-color: var(--tag-selected-bg);
+      color: var(--tag-selected-text);
+    }
+    /* Botões de layout */
+    #layout-toggle {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    #layout-toggle button {
+      padding: 6px 12px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      background-color: var(--destaque);
+      color: var(--fundo-principal);
+      margin: 0 5px;
+    }
+    /* Área dos cards */
+    #portfolio-view {
+      padding: 20px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 20px;
+    }
+    /* Layout vertical vs horizontal */
+    .layout-vertical .project-card {
+      width: 70%;
+    }
+    .layout-horizontal .project-card {
+      width: 300px;
+    }
+    .project-card {
+      background-color: var(--fundo-secundario);
+      border-radius: 8px;
+      box-shadow: 0 2px 4px var(--sombra);
+      padding: 15px;
+      cursor: pointer;
+      position: relative;
+    }
+    
+    .project-card img {
+        border-radius: 4px;
+        margin: 10px 0 0 0; /* Define a margem apenas no topo */
+        padding-left: 0; /* Garante que não haja padding esquerdo */
+        display: block; /* Garante que a imagem se comporte corretamente */
+    }
+    
+    .project-card p {
+        white-space: pre-wrap;
+        margin: 0;
+        text-align: justify;
+    }
+      
+    .project-card h3 {
+          margin-bottom: 0px; /* Reduz a margem inferior do título */
+          /* ADICIONADO - Espaço abaixo do título */
+          padding-bottom: 20px;
+    }
+    /* Tags no card */
+    .card-tags {
+      margin-top: 10px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+    .card-tags span {
+      background-color: var(--tag-bg);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 0.8em;
+    }
+    /* Detalhe do projeto */
+    #project-detail-view {
+      display: none;
+      padding: 20px;
+    }
+    #back-to-portfolio {
+      margin-bottom: 20px;
+      background-color: var(--fundo-secundario);
+      color: var(--texto-claro);
+      border: none;
+      padding: 8px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    #project-detail-container {
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+    #project-detail-content { flex: 3; }
+    #project-suggestions {
+      flex: 1;
+      background-color: var(--fundo-secundario);
+      padding: 10px;
+      border-radius: 8px;
+      max-width: 300px;
+    }
+    .suggestion-card {
+      background-color: var(--fundo-principal);
+      margin-bottom: 10px;
+      padding: 10px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .suggestion-card img {
+      width: 100%;
+      border-radius: 4px;
+      margin-top: 5px;
+    }
+    .suggestion-tags {
+      margin-top: 5px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+    .suggestion-tags span {
+      background-color: var(--tag-bg);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 0.8em;
+    }
+
+    /* MODIFICADO - LINK - Estilo para link na visualização detalhada */
+    .project-detail-content a.link-element {
+      display: block; /* Garante que o link ocupa a largura total */
+      color: var(--destaque); /* Cor padrão do link */
+      text-decoration: none; /* Remove sublinhado padrão */
+      padding: 10px 0; /* Aumenta o padding para melhor visualização */
+      text-align: center; /* Alinhamento padrão centralizado */
+  }
+
+  .project-detail-content a.link-element:hover,
+  .project-detail-content a.link-element:focus {
+      color: var(--hover-botao); /* Cor ao passar o mouse ou focar */
+  }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Portifólio - Gabriel de Antonio Mazetto</h1>
+    <div id="tag-bar"></div>
+  </header>
+  
+  <div id="layout-toggle">
+    <button id="btn-horizontal">Horizontal</button>
+    <button id="btn-vertical">Vertical</button>
+  </div>
+  
+  <!-- Área do portfólio -->
+  <section id="portfolio-view" class="layout-vertical"></section>
+
+  <!-- Detalhe do projeto -->
+  <section id="project-detail-view">
+    <button id="back-to-portfolio">← Voltar</button>
+    <div id="project-detail-container">
+      <div id="project-detail-content"></div>
+      <aside id="project-suggestions"></aside>
+    </div>
+  </section>
+  <script>
+    // Carrega projectModifications do localStorage ou inicializa
+    let projectModifications = JSON.parse(localStorage.getItem('projectModifications')) || { edited: [], deleted: [], added: [], order: [] };
+
+    // Função para salvar projectModifications no localStorage (Você precisará chamar isso em outro lugar quando as modificações forem feitas)
+    function saveProjectModifications() {
+        localStorage.setItem('projectModifications', JSON.stringify(projectModifications));
+    }
+
+    // Variáveis de filtro e layout
+    let selectedTags = [];
+    let currentLayout = "vertical";
+
+    // Renderiza a barra de tags únicas
+    function renderTagBar() {
+        const tagBar = document.getElementById('tag-bar');
+        tagBar.innerHTML = "";
+        // Usa o array projects que será populado depois
+        if (!projects) return; // Sai se projects ainda não estiver carregado
+        const allTags = projects.reduce((acc, proj) => {
+            proj.tags.forEach(tag => { if (!acc.includes(tag)) acc.push(tag); });
+            return acc;
+        }, []);
+        allTags.forEach(tag => {
+            const span = document.createElement('span');
+            span.className = "tag" + (selectedTags.includes(tag) ? " selected" : "");
+            span.innerText = tag;
+            span.addEventListener('click', () => {
+                if (selectedTags.includes(tag)) {
+                    selectedTags = selectedTags.filter(t => t !== tag);
+                } else {
+                    selectedTags.push(tag);
+                }
+                renderTagBar();
+                renderPortfolio();
+            });
+            tagBar.appendChild(span);
+        });
+    }
+
+    // Renderiza os cards na área do portfólio
+    function renderPortfolio() {
+        const portfolioEl = document.getElementById('portfolio-view');
+        portfolioEl.innerHTML = "";
+        if (!projects) return; // Sai se projects ainda não estiver carregado
+
+        let filteredProjects = projects;
+
+        // Aplica filtro de projetos deletados
+        filteredProjects = filteredProjects.filter(proj => !projectModifications.deleted.includes(proj.id));
+
+        // MODIFICADO - ORDEM - Aplica a ordem dos projetos do localStorage se existir
+        if (projectModifications.order && projectModifications.order.length > 0) {
+            const orderedProjects = [];
+            projectModifications.order.forEach(projectId => {
+                const project = filteredProjects.find(p => p.id === projectId);
+                if (project) {
+                    orderedProjects.push(project);
+                }
+            });
+            // Adiciona quaisquer projetos restantes que não estavam na ordem (projetos novos, por exemplo) ao final
+            filteredProjects.forEach(project => {
+                if (!orderedProjects.includes(project)) {
+                    orderedProjects.push(project);
+                }
+            });
+            filteredProjects = orderedProjects;
+        }
+
+
+        const filtered = selectedTags.length === 0 ? filteredProjects : filteredProjects.filter(proj =>
+            selectedTags.every(tag => proj.tags.includes(tag))
+        );
+
+        filtered.forEach(project => {
+            let modifiedProjectForCard = project;
+            // Aplica informações de projeto editado de projectModifications para o card
+            const editedProject = projectModifications.edited.find(edited => edited.id === project.id);
+            if (editedProject) {
+                // MODIFICADO - TAGS - Inclui 'tags' na merge de propriedades para o card
+                modifiedProjectForCard = { ...modifiedProjectForCard, ...editedProject, tags: editedProject.tags || modifiedProjectForCard.tags }; // Merge properties e usa tags editadas ou as originais
+            }
+
+
+            let initialMaxWidth = modifiedProjectForCard.imgWidth ? modifiedProjectForCard.imgWidth + 'px' : '100%'; // Calcula o max-width inicial
+            let initialMaxHeight = modifiedProjectForCard.imgHeight ? modifiedProjectForCard.imgHeight + 'px' : 'auto'; // Calcula o max-height inicial
+
+            const imgHTML = modifiedProjectForCard.thumb
+                ? `<img src="${modifiedProjectForCard.thumb}" alt="Thumb" style="max-width:${initialMaxWidth}; max-height:${initialMaxHeight};"
+                            data-initial-max-width="${initialMaxWidth}" data-initial-max-height="${initialMaxHeight}">` // Salva como data attributes
+                : '';
+            // MODIFICADO - TAGS - Usa modifiedProjectForCard.tags para renderizar as tags no card
+            const cardHTML = `<h3>${modifiedProjectForCard.title}</h3>
+                                        <p style="white-space: pre-wrap;">${modifiedProjectForCard.description}</p>
+                                        ${imgHTML}
+                                        <div class="card-tags">${modifiedProjectForCard.tags.map(tag => `<span>${tag}</span>`).join('')}</div>`;
+            const card = document.createElement('div');
+            card.className = 'project-card';
+            card.dataset.id = project.id;
+            card.innerHTML = cardHTML;
+            card.addEventListener('click', function() {
+                showProjectDetail(this.dataset.id);
+            });
+            portfolioEl.appendChild(card);
+        });
+    }
+
+
+    // Função para renderizar a tag-bar e o portfólio
+    function initializePortfolio() {
+        renderTagBar();
+        renderPortfolio();
+    }
+
+    let projects = []; // Declara projects aqui para ser acessível no escopo
+
+    async function loadProjectsFromParts() {
+      let allProjects = [];
+      let partNumber = 1;
+      while (true) {
+          const partFileName = `projects_part_${partNumber}.json`;
+          try {
+              const response = await fetch(partFileName);
+              if (!response.ok) {
+                  if (partNumber === 1) {
+                      return null; // Sinaliza para usar projects.json
+                  } else {
+                      break; // Para de tentar se não encontrar mais parts
+                  }
+              }
+              const partProjects = await response.json();
+              if (Array.isArray(partProjects)) {
+                  allProjects = allProjects.concat(partProjects);
+              } else {
+                  console.warn(`${partFileName} não continha um array de projetos.`);
+                  break; // Para se um part não for array
+              }
+              partNumber++;
+          } catch (error) {
+              if (partNumber === 1) {
+                  return null; // Sinaliza para usar projects.json
+              } else {
+                  console.error(`Erro ao buscar ${partFileName}:`, error);
+                  break; // Para em erro de fetch
+              }
+          }
+      }
+      return allProjects;
+  }
+
+  function fetchProjectsJson() {
+    fetch('projects.json')
+        .then(response => response.json())
+        .then(data => {
+            projects = data;
+            // Mescla os projetos adicionados armazenados no localStorage (CORREÇÃO - ADICIONAR AQUI)
+            const addedProjects = projectModifications.added || [];
+            projects = projects.concat(addedProjects);
+            initializePortfolio(); // Inicializa portfólio após obter a lista
+        })
+        .catch(error => {
+            console.error('Erro ao carregar projects.json:', error);
+            projects = [];
+            initializePortfolio(); // Tenta inicializar mesmo assim (renderizará portfólio vazio)
+            alert("Erro ao carregar projects.json. O portfólio pode estar vazio.");
+        });
+  }
+
+  function fetchProjectsFromServer() {
+    // Tenta carregar projects_part_*.json
+    loadProjectsFromParts()
+        .then(combinedProjects => {
+            if (combinedProjects && combinedProjects.length > 0) {
+                // Carregamento bem-sucedido dos parts
+                projects = combinedProjects;
+                // Mescla os projetos adicionados armazenados no localStorage (CORREÇÃO - ADICIONAR AQUI TAMBÉM)
+                const addedProjects = projectModifications.added || [];
+                projects = projects.concat(addedProjects);
+                initializePortfolio(); // Inicializa portfólio após obter a lista
+            } else {
+                // Falha ao carregar parts, tenta projects.json
+                fetchProjectsJson();
+            }
+        })
+        .catch(error => {
+            // Erro ao carregar parts, tenta projects.json
+            console.error("Erro ao carregar project parts:", error);
+            fetchProjectsJson();
+        });
+  }
+
+  // Busca projetos do servidor (parts ou projects.json)
+  fetchProjectsFromServer();
+
+    document.getElementById('btn-horizontal').addEventListener('click', function() {
+        const portfolioView = document.getElementById('portfolio-view');
+        portfolioView.classList.remove('layout-vertical');
+        portfolioView.classList.add('layout-horizontal');
+
+        // Seleciona todos os cards de projeto
+        const projectCards = document.querySelectorAll('.project-card');
+
+        // Para cada card, ajusta o estilo de tamanho da imagem (apenas tamanho)
+        projectCards.forEach(card => {
+            const img = card.querySelector('img'); // Busca a imagem dentro do card
+            if (img) {
+                img.style.maxWidth = '80%'; // Reduz a largura máxima da imagem
+                img.style.height = 'auto';   // Mantém a proporção
+                // Remove estilos de alinhamento que podem causar problema no vertical
+                img.style.display = 'block';
+                img.style.marginLeft = 'auto';
+                img.style.marginRight = 'auto';
+            }
+        });
+    });
+
+    document.getElementById('btn-vertical').addEventListener('click', function() {
+        const portfolioView = document.getElementById('portfolio-view');
+        portfolioView.classList.remove('layout-horizontal');
+        portfolioView.classList.add('layout-vertical');
+
+        // Seleciona todos os cards de projeto novamente
+        const projectCards = document.querySelectorAll('.project-card');
+
+        // Para cada card, restaura o estilo da imagem para o layout vertical (apenas tamanho original)
+        projectCards.forEach(card => {
+            const img = card.querySelector('img'); // Busca a imagem dentro do card
+            if (img) {
+                img.style.maxWidth = img.dataset.initialMaxWidth || '100%'; // Restaura o max-width original
+                img.style.maxHeight = img.dataset.initialMaxHeight || 'auto';// Restaura o max-height original
+                // Remove APENAS os estilos de alinhamento que adicionamos no horizontal, para evitar resíduos
+                img.style.display = '';
+                img.style.marginLeft = '';
+                img.style.marginRight = '';
+            }
+        });
+    });
+
+
+    // Exibe a visão de detalhe do projeto
+    function showProjectDetail(id) {
+        const projectId = Number(id);
+
+        // Tenta carregar detalhe do projeto do localStorage primeiro
+        const storedProjectDetail = localStorage.getItem('project_' + projectId);
+        let projectDetail;
+
+        if (storedProjectDetail) {
+            projectDetail = JSON.parse(storedProjectDetail);
+        } else {
+            projectDetail = projects.find(p => p.id === projectId); // Fallback para dados de projects.json
+        }
+
+
+        if (!projectDetail) return;
+
+        document.getElementById('tag-bar').style.display = 'none';
+        document.getElementById('layout-toggle').style.display = 'none';
+        document.getElementById('portfolio-view').style.display = 'none';
+        document.getElementById('project-detail-view').style.display = 'block';
+
+        // MODIFICADO - Rolagem imediata para o topo da seção de detalhes (sem animação)
+        document.getElementById('project-detail-view').scrollIntoView({ block: 'start' });
+
+        const detailContent = document.getElementById('project-detail-content');
+        let html = ``;
+        projectDetail.sections.forEach(section => {
+            if (section.type === 'texto') {
+                let colorStyle = section.color ? `color:${section.color};` : "";
+                let commonStyle = `text-align:${section.align}; font-size:${section.size}px; ${colorStyle}`;
+                if (section.style === 'titulo') {
+                    html += `<h2 style="${commonStyle} white-space: pre-wrap;">${section.content}</h2>`;
+                } else if (section.style === 'subtitulo') {
+                    html += `<h3 style="${commonStyle} white-space: pre-wrap;">${section.content}</h2>`;
+                } else {
+                    html += `<p style="${commonStyle} white-space: pre-wrap;">${section.content}</p>`;
+                }
+            } else if (section.type === 'imagem') {
+                html += `<div style="text-align:${section.imgAlign};"><img src="${section.image}" style="max-width:${section.imgWidth}px; height: ${section.imgHeight}px;" /></div>`;
+            } else if (section.type === 'composite') {
+                let colorStyle = section.color ? `color:${section.color};` : "";
+                let textDiv = `<div style="text-align:${section.align}; ${colorStyle} white-space: pre-wrap;">${section.text}</div>`;
+                if (section.imageAlign === 'left') {
+                    html += `<div style="display:flex; align-items:center; font-size:${section.size}px; white-space: pre-wrap;">
+                                            <img src="${section.image}" style="max-width:${section.imgWidth}px; height: ${section.imgHeight}px; margin-right:10px;">
+                                            ${textDiv}
+                                        </div>`;
+                } else {
+                    html += `<div style="display:flex; align-items:center; font-size:${section.size}px; white-space: pre-wrap;">
+                                            ${textDiv}
+                                            <img src="${section.image}" style="max-width:${section.imgWidth}px; height: ${section.imgHeight}px; margin-left:10px;">
+                                        </div>`;
+                }
+            }  // MODIFICADO - LINK - Adicionado tratamento para seção do tipo 'link'
+            else if (section.type === 'link') {
+                html += `<div style="text-align:${section.align};"><a href="${section.url}" class="link-element" target="_blank">${section.text}</a></div>`;
+            }
+        });
+        detailContent.innerHTML = html;
+        renderSuggestions(projectDetail);
+    }
+
+    // Renderiza sugestões de projetos na sidebar
+    function renderSuggestions(currentProject) {
+        const suggestionEl = document.getElementById('project-suggestions');
+        suggestionEl.innerHTML = '<h4>Outros Projetos Parecidos:</h4>';
+
+        // 1. Calcular contagem de tags em comum e filtrar projetos diferentes
+        let scoredSuggestions = projects.filter(p => p.id != currentProject.id)
+            .map(p => {
+                const commonTags = p.tags.filter(tag => currentProject.tags.includes(tag));
+                return { project: p, commonTagCount: commonTags.length };
+            });
+
+        // 2. Filtrar projetos com tags em comum (contagem > 0)
+        let similar = scoredSuggestions.filter(item => item.commonTagCount > 0);
+
+        if (similar.length === 0) {
+            // 3. Caso "Ops!...", mensagem e projetos aleatórios (até 5)
+            suggestionEl.innerHTML = `<p style="text-align: center;">Ops!<br><br>Parece que não há projetos com temas semelhantes.<br><br>Que tal dar uma olhada nesses aqui:</p>`;
+            similar = scoredSuggestions.sort(() => 0.5 - Math.random()); // Embaralha para "aleatórios"
+        } else {
+            // 4. Ordenar por contagem de tags em comum (descendente)
+            similar.sort((a, b) => b.commonTagCount - a.commonTagCount);
+        }
+
+        // 5. Limitar a 5 sugestões e extrair apenas os projetos
+        similar = similar.slice(0, 5).map(item => item.project);
+
+        // 6. Renderizar sugestões
+        similar.forEach(p => {
+            const card = document.createElement('div');
+            card.className = 'suggestion-card';
+            let tagHTML = p.tags.map(tag => `<span>${tag}</span>`).join('');
+            card.innerHTML = `<h4>${p.title}</h4>
+                                        <p style="white-space: pre-wrap;">${p.description}</p>
+                                        <div class="suggestion-tags">${tagHTML}</div>`;
+            card.addEventListener('click', () => showProjectDetail(p.id));
+            suggestionEl.appendChild(card);
+        });
+    }
+
+    document.getElementById('back-to-portfolio').addEventListener('click', () => {
+        document.getElementById('tag-bar').style.display = 'flex';
+        document.getElementById('layout-toggle').style.display = 'block';
+        document.getElementById('portfolio-view').style.display = 'flex';
+        document.getElementById('project-detail-view').style.display = 'none';
+    });
+
+     // Inicializa barra de tags e portfólio será chamado depois de buscar os projetos
+
+</script>
+</body>
+</html>

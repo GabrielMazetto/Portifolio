@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Admin – Gerenciador de Projetos</title>
+    <style>
+        :root {
+            --fundo-principal: #2c2c2c;
+            --fundo-secundario: #3a3a3a;
+            --texto-claro: #f5f5f5;
+            --destaque: #cccccc;
+            --sombra: rgba(0, 0, 0, 0.1);
+            --tag-bg: #555;
+        }
+        body {
+            margin: 0;
+            padding: 20px;
+            background-color: var(--fundo-principal);
+            color: var(--texto-claro);
+            font-family: Arial, sans-serif;
+        }
+        h1 { text-align: center; }
+        /* Botão Adicionar Projeto */
+        #add-project-btn {
+            margin: 20px auto;
+            display: block;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            background-color: var(--destaque);
+            color: var(--fundo-principal);
+            cursor: pointer;
+            max-width: 400px;
+        }
+        /* Lista de projetos em formato de card */
+        .project-list {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            max-width: 800px;
+            margin: 20px auto;
+        }
+        .project-card {
+            background-color: var(--fundo-secundario);
+            border-radius: 8px;
+            box-shadow: 0 2px 4px var(--sombra);
+            padding: 15px;
+            position: relative;
+        }
+        .project-card p {
+            white-space: pre-wrap;
+            text-align: justify;
+        }
+        .project-card img {
+            border-radius: 4px;
+            margin-top: 10px;
+        }
+        .card-tags {
+            margin-top: 10px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+        }
+        .card-tags span {
+            background-color: var(--tag-bg);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.8em;
+        }
+        .card-buttons {
+            margin-top: 10px;
+            display: flex;
+            gap: 10px;
+        }
+        .card-buttons button, .card-buttons a { /* Style for both buttons and move links */
+            padding: 6px 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            background-color: var(--destaque);
+            color: var(--fundo-principal);
+            display: inline-block; /* To allow inline button display */
+            text-decoration: none; /* Remove underline from link if using <a> */
+        }
+        /* Botão de excluir (na lateral inferior direita do card) */
+        .delete-btn {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            padding: 5px 8px;
+            border: none;
+            border-radius: 4px;
+            background-color: red;
+            color: var(--fundo-principal);
+            cursor: pointer;
+        }
+        /* Modal para edição do card */
+        #modal-overlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        #card-edit-form {
+            background-color: var(--fundo-secundario);
+            padding: 20px;
+            border-radius: 4px;
+            max-width: 400px;
+            width: 90%;
+        }
+        #card-edit-form h2 { text-align: center; }
+        #card-edit-form label {
+            display: block;
+            margin-bottom: 10px;
+        }
+        #card-edit-form input,
+        #card-edit-form textarea {
+            width: 100%;
+            padding: 5px;
+            box-sizing: border-box;
+            margin-top: 5px;
+        }
+        #card-edit-form button {
+            margin-top: 10px;
+            padding: 8px;
+            border: none;
+            border-radius: 4px;
+            background-color: var(--destaque);
+            color: var(--fundo-principal);
+            width: 100%;
+            cursor: pointer;
+        }
+        /* Modal para adicionar projeto */
+        #modal-add-overlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        #card-add-form {
+            background-color: var(--fundo-secundario);
+            padding: 20px;
+            border-radius: 4px;
+            max-width: 400px;
+            width: 90%;
+        }
+        #card-add-form h2 { text-align: center; }
+        #card-add-form label {
+            display: block;
+            margin-bottom: 10px;
+        }
+        #card-add-form input,
+        #card-add-form textarea {
+            width: 100%;
+            padding: 5px;
+            box-sizing: border-box;
+            margin-top: 5px;
+        }
+        #card-add-form button {
+            margin-top: 10px;
+            padding: 8px;
+            border: none;
+            border-radius: 4px;
+            background-color: var(--destaque);
+            color: var(--fundo-principal);
+            width: 100%;
+            cursor: pointer;
+        }
+        /* Botão para download */
+        #download-site-btn {
+            margin: 20px auto;
+            display: block;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            background-color: var(--destaque);
+            color: var(--fundo-principal);
+            cursor: pointer;
+            max-width: 400px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Admin – Gerenciador de Projetos</h1>
+    <button id="add-project-btn">Adicionar Projeto</button>
+    <div class="project-list" id="project-list"></div>
+
+    <div id="modal-overlay">
+        <form id="card-edit-form">
+            <h2>Editar Card</h2>
+            <label>
+                Título:
+                <input type="text" id="edit-card-title" required>
+            </label>
+            <label>
+                Descrição:
+                <textarea id="edit-card-description" required></textarea>
+            </label>
+            <label>
+                Tags (separadas por vírgula):
+                <input type="text" id="edit-card-tags" required>
+            </label>
+            <label>
+                Imagem:
+                <input type="file" id="edit-card-image-file" accept="image/*">
+            </label>
+            <label>
+                Largura da Imagem (px) – opcional:
+                <input type="number" id="edit-card-img-width" placeholder="Ex: 300">
+            </label>
+            <label>
+                Altura da Imagem (px) – opcional:
+                <input type="number" id="edit-card-img-height" placeholder="Ex: 200">
+            </label>
+            <button type="submit">Salvar Alterações</button>
+            <button type="button" id="cancel-card-edit">Cancelar</button>
+        </form>
+    </div>
+
+    <div id="modal-add-overlay">
+        <form id="card-add-form">
+            <h2>Adicionar Projeto</h2>
+            <label>
+                Título:
+                <input type="text" id="add-card-title" required>
+            </label>
+            <label>
+                Descrição:
+                <textarea id="add-card-description" required></textarea>
+            </label>
+            <label>
+                Tags (separadas por vírgula):
+                <input type="text" id="add-card-tags" required>
+            </label>
+            <button type="submit">Adicionar Projeto</button>
+            <button type="button" id="cancel-add-project">Cancelar</button>
+        </form>
+    </div>
+
+    <button id="download-site-btn">Baixar Site Atualizado</button>
+
+    <script>
+        // Função auxiliar: getElementById
+        const $ = id => document.getElementById(id);
+    
+        const render = () => {
+            projectListEl.innerHTML = "";
+            projects.forEach((p, index) => {
+                const w = p.imgWidth ? p.imgWidth + "px" : "100%",
+                    h = p.imgHeight ? p.imgHeight + "px" : "auto",
+                    styleImg = p.thumb ? `style="max-width:${w}; max-height:${h};"` : "";
+                console.log("Renderizando projeto ID:", p.id, "Thumb Data URL:", p.thumb ? p.thumb.substring(0, 50) + "..." : null); // Log ao renderizar, incluindo thumb
+                projectListEl.innerHTML += `<div class="project-card">
+                    <h3>${p.title}</h3>
+                    <p>${p.description}</p>
+                    ${p.thumb ? `<img src="${p.thumb}" ${styleImg}>` : ''}
+                    <div class="card-tags">${p.tags.map(t => `<span>${t}</span>`).join('')}</div>
+                    <div class="card-buttons">
+                        <button onclick="openEdit(${p.id})">Editar Card</button>
+                        <button onclick="window.location.href='admin_edit.html?id=${p.id}'">Editar Projeto</button>
+                        ${index > 0 ? `<button onclick="moveUp(${p.id})">Mover Para Cima</button>` : ''}
+                        ${index < projects.length - 1 ? `<button onclick="moveDown(${p.id})">Mover Para Baixo</button>` : ''}
+                    </div>
+                    <button class="delete-btn" onclick="deleteProject(${p.id})">Excluir</button>
+                </div>`;
+            });
+        };
+    
+    
+        const projectListEl = $('project-list'),
+            modalOverlay = $('modal-overlay'),
+            addModalOverlay = $('modal-add-overlay');
+        let editingCardId = null;
+    
+        let projects = [];
+        let projectModifications = { edited: [], deleted: [], added: [], order: [] };
+    
+        const loadModifications = () => {
+            const storedModifications = localStorage.getItem('projectModifications');
+            if (storedModifications) {
+                try {
+                    projectModifications = JSON.parse(storedModifications);
+                    console.log("Modificações carregadas do localStorage:", projectModifications); // Log das modificações carregadas
+                } catch (e) {
+                    console.error("Erro ao ler modificações do localStorage:", e);
+                    projectModifications = { edited: [], deleted: [], added: [], order: [] };
+                }
+            } else {
+                projectModifications = { edited: [], deleted: [], added: [], order: [] };
+                console.log("Nenhuma modificação encontrada no localStorage."); // Log se não houver modificações
+            }
+        };
+    
+        const saveModifications = () => {
+            localStorage.setItem('projectModifications', JSON.stringify(projectModifications));
+        };
+    
+        const applyLocalStorageModifications = (jsonProjects, modifications) => {
+            let modifiedProjects = [...jsonProjects];
+    
+            modifications.edited.forEach(editedProject => {
+                const index = modifiedProjects.findIndex(p => p.id === editedProject.id);
+                if (index !== -1) {
+                    modifiedProjects[index] = { ...modifiedProjects[index], ...editedProject };
+                    console.log("Aplicando edição para projeto ID:", editedProject.id, "Thumb Data URL:", editedProject.thumb ? editedProject.thumb.substring(0, 50) + "..." : null); // Log ao aplicar edição, incluindo thumb
+                }
+            });
+    
+            modifiedProjects = [...modifiedProjects, ...modifications.added];
+    
+    
+            modifications.deleted.forEach(deletedProjectId => {
+                modifiedProjects = modifiedProjects.filter(p => p.id !== deletedProjectId);
+            });
+    
+            // Aplicar a ordem salva do localStorage, se existir
+            if (modifications.order && modifications.order.length > 0) {
+                const orderedProjects = [];
+                modifications.order.forEach(projectId => {
+                    const project = modifiedProjects.find(p => p.id === projectId);
+                    if (project) {
+                        orderedProjects.push(project);
+                    }
+                });
+                modifiedProjects = orderedProjects;
+            }
+    
+            return modifiedProjects;
+        };
+    
+    
+        fetchProjectsFromServer();
+    
+        function fetchProjectsFromServer() {
+            // Tenta carregar projects_part_*.json
+            loadProjectsFromParts()
+                .then(combinedProjects => {
+                    if (combinedProjects && combinedProjects.length > 0) {
+                        // Carregamento bem-sucedido dos parts
+                        projects = combinedProjects;
+                        loadModifications();
+                        projects = applyLocalStorageModifications(projects, projectModifications);
+                        render();
+                    } else {
+                        // Falha ao carregar parts, tenta projects.json
+                        fetchProjectsJson();
+                    }
+                })
+                .catch(error => {
+                    // Erro ao carregar parts, tenta projects.json
+                    console.error("Erro ao carregar project parts:", error);
+                    fetchProjectsJson();
+                });
+        }
+
+        async function loadProjectsFromParts() {
+            let allProjects = [];
+            let partNumber = 1;
+            while (true) {
+                const partFileName = `projects_part_${partNumber}.json`;
+                try {
+                    const response = await fetch(partFileName);
+                    if (!response.ok) {
+                        if (partNumber === 1) {
+                            return null; // Sinaliza para usar projects.json
+                        } else {
+                            break; // Para de tentar se não encontrar mais parts
+                        }
+                    }
+                    const partProjects = await response.json();
+                    if (Array.isArray(partProjects)) {
+                        allProjects = allProjects.concat(partProjects);
+                    } else {
+                        console.warn(`${partFileName} não continha um array de projetos.`);
+                        break; // Para se um part não for array
+                    }
+                    partNumber++;
+                } catch (error) {
+                    if (partNumber === 1) {
+                        return null; // Sinaliza para usar projects.json
+                    } else {
+                        console.error(`Erro ao buscar ${partFileName}:`, error);
+                        break; // Para em erro de fetch
+                    }
+                }
+            }
+            return allProjects;
+        }
+    
+        function fetchProjectsJson() {
+            fetch('projects.json')
+                .then(response => response.json())
+                .then(data => {
+                    loadModifications();
+                    projects = applyLocalStorageModifications(data, projectModifications);
+                    render();
+                })
+                .catch(error => {
+                    console.error('Erro ao carregar projects.json:', error);
+                    projects = [];
+                    render();
+                    alert("Erro ao carregar projects.json no Admin. A lista de projetos pode estar vazia.");
+                });
+        }
+    
+        window.moveUp = (id) => {
+            const index = projects.findIndex(p => p.id === id);
+            if (index > 0) {
+                [projects[index], projects[index - 1]] = [projects[index - 1], projects[index]];
+                // Atualizar projectModifications.order após mover para cima
+                projectModifications.order = projects.map(p => p.id);
+                saveModifications(); // Salvar modificações incluindo a nova ordem
+                render();
+            }
+        };
+    
+    
+        window.moveDown = (id) => {
+            const index = projects.findIndex(p => p.id === id);
+            if (index < projects.length - 1) {
+                [projects[index], projects[index + 1]] = [projects[index + 1], projects[index]];
+                // Atualizar projectModifications.order após mover para baixo
+                projectModifications.order = projects.map(p => p.id);
+                saveModifications(); // Salvar modificações incluindo a nova ordem
+                render();
+            }
+        };
+    
+    
+        window.openEdit = id => {
+            editingCardId = id;
+            const p = projects.find(p => p.id == id);
+            $('edit-card-title').value = p.title;
+            $('edit-card-description').value = p.description;
+            $('edit-card-tags').value = p.tags.join(', ');
+            $('edit-card-image-file').value = "";
+            $('edit-card-img-width').value = p.imgWidth || "";
+            $('edit-card-img-height').value = p.imgHeight || "";
+            modalOverlay.style.display = "flex";
+        };
+    
+    
+        $('edit-card-image-file').addEventListener('change', function() {
+            if (this.files && this.files[0]) {
+                const reader = new FileReader();
+                reader.onload = e => {
+                    const img = new Image();
+                    img.onload = () => {
+                        $('edit-card-img-width').value = img.naturalWidth;
+                        $('edit-card-img-height').value = img.naturalHeight;
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(this.files[0]);
+            }
+        });
+    
+        $('card-edit-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const projectIdToEdit = editingCardId;
+            const projectIndex = projects.findIndex(p => p.id == projectIdToEdit);
+            if (projectIndex === -1) return;
+        
+            const updatedProjectData = {
+                id: projectIdToEdit,
+                title: $('edit-card-title').value.trim(),
+                description: $('edit-card-description').value,
+                tags: $('edit-card-tags').value.split(',').map(t => t.trim()).filter(t => t),
+                imgWidth: $('edit-card-img-width').value,
+                imgHeight: $('edit-card-img-height').value
+            };
+        
+            const fileInput = $('edit-card-image-file');
+            if (fileInput.files && fileInput.files[0]) {
+                const reader = new FileReader();
+                reader.onload = e => {
+                    updatedProjectData.thumb = e.target.result;
+                    const img = new Image();
+                    img.onload = () => {
+                        updatedProjectData.originalWidth = img.naturalWidth;
+                        updatedProjectData.originalHeight = img.naturalHeight;
+                        projects[projectIndex] = { ...projects[projectIndex], ...updatedProjectData };
+        
+                        // Se o projeto foi adicionado recentemente, atualize em "added"
+                        const addedIndex = projectModifications.added.findIndex(p => p.id === projectIdToEdit);
+                        if (addedIndex !== -1) {
+                            projectModifications.added[addedIndex] = { ...projectModifications.added[addedIndex], ...updatedProjectData };
+                        } else {
+                            // Caso contrário, atualize ou adicione em "edited"
+                            const editedIndex = projectModifications.edited.findIndex(p => p.id === projectIdToEdit);
+                            if (editedIndex !== -1) {
+                                projectModifications.edited[editedIndex] = updatedProjectData;
+                            } else {
+                                projectModifications.edited.push(updatedProjectData);
+                            }
+                        }
+                        saveModifications();
+                        render();
+                        modalOverlay.style.display = "none";
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(fileInput.files[0]);
+            } else {
+                projects[projectIndex] = { ...projects[projectIndex], ...updatedProjectData };
+                const addedIndex = projectModifications.added.findIndex(p => p.id === projectIdToEdit);
+                if (addedIndex !== -1) {
+                    projectModifications.added[addedIndex] = { ...projectModifications.added[addedIndex], ...updatedProjectData };
+                } else {
+                    const editedIndex = projectModifications.edited.findIndex(p => p.id === projectIdToEdit);
+                    if (editedIndex !== -1) {
+                        projectModifications.edited[editedIndex] = updatedProjectData;
+                    } else {
+                        projectModifications.edited.push(updatedProjectData);
+                    }
+                }
+                saveModifications();
+                render();
+                modalOverlay.style.display = "none";
+            }
+        });
+        
+        $('cancel-card-edit').addEventListener('click', () => modalOverlay.style.display = "none");
+    
+        $('add-project-btn').addEventListener('click', () => addModalOverlay.style.display = "flex");
+        $('cancel-add-project').addEventListener('click', () => addModalOverlay.style.display = "none");
+        $('card-add-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const newProject = {
+                id: Date.now(),
+                title: $('add-card-title').value.trim(),
+                description: $('add-card-description').value,
+                tags: $('add-card-tags').value.split(',').map(t => t.trim()).filter(t => t),
+                thumb: "",
+                imgWidth: "",
+                imgHeight: "",
+                originalWidth: null,
+                originalHeight: null
+            };
+            projects.push(newProject);
+            projectModifications.added.push(newProject);
+            // Armazena o projeto individualmente para que o editor o encontre
+            localStorage.setItem('project_' + newProject.id, JSON.stringify(newProject));
+            console.log("Projeto adicionado:", newProject, "projectModifications.added:", projectModifications.added);
+            saveModifications();
+            render();
+            addModalOverlay.style.display = "none";
+            this.reset();
+        });
+
+    
+        $('download-site-btn').addEventListener('click', () => {
+            // MODIFICAÇÃO INÍCIO: Buscar sections do localStorage e mesclar com os projetos
+            const projectsWithSections = projects.map(project => {
+                const localStorageKey = 'project_' + project.id;
+                const storedProjectString = localStorage.getItem(localStorageKey);
+                if (storedProjectString) {
+                    try {
+                        const storedProject = JSON.parse(storedProjectString);
+                        if (storedProject && storedProject.sections) {
+                            // Mescla as sections do localStorage com o projeto atual
+                            return { ...project, sections: storedProject.sections };
+                        }
+                    } catch (e) {
+                        console.error("Erro ao parsear projeto do localStorage para download:", e);
+                    }
+                }
+                return project; // Retorna o projeto original se não houver sections no localStorage ou erro
+            });
+            // MODIFICAÇÃO FIM
+        
+            const jsonOutput = JSON.stringify(projectsWithSections, null, 2); // Usar projectsWithSections para o download
+            download('projects.json', jsonOutput);
+        });
+    
+        const download = (name, content) => {
+            const type = name.endsWith('.css')
+                ? "text/css"
+                : name.endsWith('.js') ? "application/javascript" : "text/html";
+            const blob = new Blob([content], { type });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = name;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(a.href);
+        };
+    
+    
+        function deleteProject(id) {
+            if (confirm("Deseja realmente excluir este projeto?")) {
+                const addedIndex = projectModifications.added.findIndex(p => p.id === id);
+                if (addedIndex !== -1) {
+                    projectModifications.added.splice(addedIndex, 1);
+                } else {
+                    projectModifications.deleted.push(id);
+                }
+                projects = projects.filter(p => p.id !== id);
+                saveModifications(); // Chamada correta para saveModifications
+                render();
+            }
+        }
+    
+    
+        render();
+    </script>
+</body>
+</html>

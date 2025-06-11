@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Editar Projeto</title>
+    <style>
+        :root {
+            --fundo-principal: #2c2c2c;
+            --fundo-secundario: #3a3a3a;
+            --texto-claro: #f5f5f5;
+            --destaque: #cccccc;
+            --hover-botao: #b3b3b3;
+        }
+        body {
+            margin: 0;
+            padding: 20px;
+            background-color: var(--fundo-principal);
+            color: var(--texto-claro);
+            font-family: Arial, sans-serif;
+        }
+        header {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            margin-bottom: 10px;
+        }
+        header button {
+            margin-right: 20px;
+        }
+        header h1 {
+            margin: 0;
+            text-align: center; /* Centraliza o título */
+            width: 100%; /* Garante que o título se centralize em relação ao header */
+        }
+        #editor-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 10px;
+            background-color: var(--fundo-secundario);
+            border-radius: 4px;
+            position: relative;
+        }
+        .editor-block {
+            position: relative;
+            margin: 10px 0;
+        }
+        .editor-element {
+            padding: 5px;
+            position: relative;
+        }
+        .editor-block > .add-bar {
+            display: none;
+            text-align: center;
+            color: var(--destaque);
+            cursor: pointer;
+            font-size: 0.9em;
+            padding: 5px 0;
+        }
+        .editor-block:hover > .add-bar {
+            display: block;
+        }
+        .toolbar {
+            display: none;
+            margin-top: 5px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .toolbar button, .toolbar input {
+            vertical-align: middle;
+            padding: 4px 8px;
+            margin-right: 5px;
+            background-color: var(--destaque);
+            color: var(--fundo-principal);
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .toolbar button:hover, .toolbar input:hover {
+            background-color: var(--hover-botao);
+        }
+        .text-element {
+            outline: 1px dashed transparent;
+        }
+        .text-element:focus {
+            outline: 1px dashed var(--destaque);
+        }
+        .image-element {
+            display: block;
+            cursor: pointer;
+        }
+        #back-button {
+            background-color: var(--fundo-secundario);
+            color: var(--texto-claro);
+            border: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s; /* Transição suave para hover */
+        }
+        #back-button:hover {
+            background-color: var(--hover-botao); /* Cor de hover */
+        }
+        #save-editor-btn {
+            display: block;
+            margin: 20px auto;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            background-color: var(--destaque);
+            color: var(--fundo-principal);
+            cursor: pointer;
+            max-width: 300px;
+            transition: background-color 0.3s;
+        }
+        #save-editor-btn:hover {
+            background-color: var(--hover-botao);
+        }
+        .image-toolbar {
+            display: none;
+            margin-top: 5px;
+            text-align: center;
+        }
+        .image-toolbar button, .image-toolbar input {
+            padding: 4px 8px;
+            margin-right: 5px; /* <-- Modified to margin-right only */
+            margin-bottom: 5px; /* Added margin-bottom for vertical spacing if needed */
+            background-color: var(--destaque);
+            color: var(--fundo-principal);
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .image-toolbar button:hover, .image-toolbar input:hover {
+            background-color: var(--hover-botao);
+        }
+        .image-toolbar input[type="number"] {
+            width: 60px;
+        }
+        .image-element.selected {
+            outline: 2px solid var(--destaque);
+        }
+        /* MODIFICADO - LINK - Estilo para link-element */
+        .link-element {
+            display: block; /* Garante que o link ocupa a largura total */
+            color: var(--destaque); /* Cor padrão do link */
+            text-decoration: none; /* Remove sublinhado padrão */
+            padding: 5px;
+            outline: 1px dashed transparent;
+            text-align: center; /* Centraliza o link por padrão */
+        }
+
+        .link-element:hover, .link-element:focus {
+            color: var(--hover-botao); /* Cor ao passar o mouse ou focar */
+            outline: 1px dashed var(--destaque); /* Adiciona outline ao focar */
+        }
+
+        .link-toolbar {
+            display: none;
+            margin-top: 5px;
+            text-align: center;
+        }
+
+        .link-toolbar button, .link-toolbar input {
+            padding: 4px 8px;
+            margin: 5px;
+            background-color: var(--destaque);
+            color: var(--fundo-principal);
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .link-toolbar button:hover, .link-toolbar input:hover {
+            background-color: var(--hover-botao);
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <button onclick="window.location.href='admin.html'" id="back-button">Voltar</button>
+        <h1>Editar Projeto</h1>
+    </header>
+
+    <div id="editor-container"></div>
+
+    <button id="save-editor-btn">Salvar Alterações</button>
+
+    <script>
+        // Função auxiliar: getElementById
+        function getQueryParam(name) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(name);
+        }
+        
+
+        function fetchProjectsFromServer() {
+            // Tenta carregar projects_part_*.json
+            loadProjectsFromParts()
+                .then(combinedProjects => {
+                    if (combinedProjects && combinedProjects.length > 0) {
+                        // Carregamento bem-sucedido dos parts
+                        projects = combinedProjects;
+                        loadProjectForEdit(); // Carrega projeto específico após obter a lista
+                    } else {
+                        // Falha ao carregar parts, tenta projects.json
+                        fetchProjectsJson();
+                    }
+                })
+                .catch(error => {
+                    // Erro ao carregar parts, tenta projects.json
+                    console.error("Erro ao carregar project parts:", error);
+                    fetchProjectsJson();
+                });
+        }
+    
+        async function loadProjectsFromParts() {
+            let allProjects = [];
+            let partNumber = 1;
+            while (true) {
+                const partFileName = `projects_part_${partNumber}.json`;
+                try {
+                    const response = await fetch(partFileName);
+                    if (!response.ok) {
+                        if (partNumber === 1) {
+                            return null; // Sinaliza para usar projects.json
+                        } else {
+                            break; // Para de tentar se não encontrar mais parts
+                        }
+                    }
+                    const partProjects = await response.json();
+                    if (Array.isArray(partProjects)) {
+                        allProjects = allProjects.concat(partProjects);
+                    } else {
+                        console.warn(`${partFileName} não continha um array de projetos.`);
+                        break; // Para se um part não for array
+                    }
+                    partNumber++;
+                } catch (error) {
+                    if (partNumber === 1) {
+                        return null; // Sinaliza para usar projects.json
+                    } else {
+                        console.error(`Erro ao buscar ${partFileName}:`, error);
+                        break; // Para em erro de fetch
+                    }
+                }
+            }
+            return allProjects;
+        }
+    
+        function fetchProjectsJson() {
+            fetch('projects.json')
+                .then(response => response.json())
+                .then(data => {
+                    projects = data;
+                    loadProjectForEdit(); // Carrega projeto específico após obter a lista
+                })
+                .catch(error => {
+                    console.error('Erro ao carregar projects.json:', error);
+                    projects = [];
+                    alert("Erro ao carregar projects.json no Admin. A lista de projetos pode estar vazia.");
+                    window.location.href = "admin.html"; // Redireciona para admin.html em caso de erro
+                });
+        }
+    
+        function loadProjectForEdit() {
+            const storedProject = localStorage.getItem('project_' + projectId); // Verifica localStorage para projeto específico
+    
+            if (storedProject) { // Se houver dados para este projeto no localStorage
+                try {
+                    project = JSON.parse(storedProject); // Carrega projeto do localStorage
+                    if (!project.sections) project.sections = [];
+                    // Inicializar propriedades de título e descrição se não existirem (localStorage)
+                    if (!project.title) project.title = 'Título do Projeto';
+                    if (!project.description) project.description = 'Descrição do projeto...';
+                    if (!project.titleSize) project.titleSize = 24;
+                    if (!project.titleColor) project.titleColor = '#f5f5f5';
+                    if (!project.descriptionSize) project.descriptionSize = 16;
+                    if (!project.descriptionColor) project.descriptionColor = '#f5f5f5';
+    
+                    renderEditor(); // Renderiza o editor com dados do localStorage
+                    return; // Importante: Sai da função para não buscar do JSON
+                } catch (e) {
+                    console.error("Erro ao ler projeto do localStorage, buscando do servidor:", e);
+                    // Se erro ao parsear, busca do servidor como fallback
+                }
+            }
+    
+            // Se não encontrou no localStorage ou houve erro, busca do projects (já carregado via parts ou projects.json)
+            project = projects.find(p => p.id == projectId);
+    
+            if (!project) {
+                alert("Projeto não encontrado!");
+                window.location.href = "admin.html";
+                return;
+            }
+            if (!project.sections) project.sections = [];
+            // Inicializar propriedades de título e descrição se não existirem (JSON)
+            if (!project.title) project.title = 'Título do Projeto';
+            if (!project.description) project.description = 'Descrição do projeto...';
+            if (!project.titleSize) project.titleSize = 24;
+            if (!project.titleColor) project.titleColor = '#f5f5f5';
+            if (!project.descriptionSize) project.descriptionSize = 16;
+            if (!project.descriptionColor) project.descriptionColor = '#f5f5f5';
+    
+            renderEditor();
+        }
+        
+
+        let projects = []; // Inicializa projects como um array vazio (para usar dados do JSON se necessário)
+        let project = null;
+        const projectId = getQueryParam('id');
+        const editorContainer = document.getElementById('editor-container');
+
+
+        // Inicializa a busca do projeto
+        fetchProjectsFromServer();
+
+
+        const save = () => localStorage.setItem('project_' + project.id, JSON.stringify(project)); // Salva apenas o projeto atual no localStorage
+
+
+        // Cria a "add-bar" para adicionar elementos
+        function createAddBar(index) {
+            const bar = document.createElement('div');
+            bar.className = "add-bar";
+            // MODIFICADO - LINK - Adicionado botão "Link"
+            bar.innerHTML = '---------------------- Adicionar: ' +
+                '<button onclick="addElement(\'paragrafo\', ' + index + ')">Parágrafo</button> ' +
+                '<button onclick="addImageElement(' + index + ')">Imagem</button> ' +
+                '<button onclick="addLinkElement(' + index + ')">Link</button> ----------------------';
+            return bar;
+        }
+
+        // Renderiza o editor a partir de project.sections
+        function renderEditor() {
+            editorContainer.innerHTML = "";
+
+            // Garantir que sempre haja pelo menos duas seções para título e descrição
+            if (!project.sections) {
+                project.sections = [];
+            }
+            while (project.sections.length < 2) {
+                project.sections.push({ type: 'texto', content: '', size: 18, align: 'justify', bold: false, color: "#f5f5f5" }); // Adiciona parágrafos padrão se necessário
+            }
+
+            project.sections.forEach((sec, index) => {
+                const block = document.createElement('div');
+                block.className = "editor-block";
+
+                const el = document.createElement('div');
+                el.className = "editor-element";
+
+                if (sec.type === 'texto') {
+                    let fontSize = sec.size || 18; // Tamanho padrão
+                    let textAlign = sec.align || 'justify'; // Alinhamento padrão
+                    let fontWeight = sec.bold ? 'bold' : 'normal';
+                    let styleFontSize = `font-size:${fontSize}px;`;
+                    let styleTextAlign = `text-align:${textAlign};`;
+                    let styleFontWeight = `font-weight:${fontWeight};`;
+                    let textColor = sec.color || '#f5f5f5';
+                    let styleColor = `color:${textColor};`;
+
+                    let elementStyle = styleFontSize + styleTextAlign + styleFontWeight + styleColor;
+
+                    // **MODIFICADO: Estilos e conteúdo diferentes para título (índice 0) e descrição (índice 1)**
+                    let content = sec.content;
+                    let toolbarContent = 'Tamanho: <input type="number" value="' + fontSize + '"> ' +
+                        '<button onclick="toggleBold(this)">Bold</button> ' +
+                        '<button onclick="setAlign(this, \'center\')">Centralizar</button> ' +
+                        '<button onclick="setAlign(this, \'left\')">Esquerda</button> ' +
+                        '<button onclick="setAlign(this, \'justify\')">Justificar</button> ' +
+                        'Cor: <input type="color" value="' + textColor + '"> ' +
+                        '<button onclick="deleteElement(this)">Excluir</button>';
+
+
+                    if (index === 0) { // Primeiro parágrafo será o título
+                        fontSize = sec.size || 24; // Tamanho padrão maior para título
+                        textAlign = 'center'; // Centralizar título
+                        fontWeight = 'bold'; // Negrito para título
+                        styleFontSize = `font-size:${fontSize}px;`;
+                        styleTextAlign = `text-align:${textAlign};`;
+                        styleFontWeight = `font-weight:${fontWeight};`;
+                        elementStyle = styleFontSize + styleTextAlign + styleFontWeight + styleColor;
+                        content = sec.content || project.title || 'Título do Projeto'; // Usar título do projeto se section.content estiver vazio
+                    } else if (index === 1) { // Segundo parágrafo será a descrição
+                        fontSize = sec.size || 16; // Tamanho padrão para descrição
+                        textAlign = 'justify'; // Justificar descrição
+                        fontWeight = 'normal';
+                        styleFontSize = `font-size:${fontSize}px;`;
+                        styleTextAlign = `text-align:${textAlign};`;
+                        styleFontWeight = `font-weight:${fontWeight};`;
+                        elementStyle = styleFontSize + styleTextAlign + styleFontWeight + styleColor;
+                        content = sec.content || project.description || 'Descrição do projeto...'; // Usar descrição do projeto se section.content estiver vazio
+                    }
+
+                    el.innerHTML = `<div class="text-element project-section-text" contenteditable="true" style="${elementStyle}">${content}</div>`;
+                    const toolbar = document.createElement('div');
+                    toolbar.className = "toolbar";
+                    toolbar.innerHTML = toolbarContent;
+                    el.appendChild(toolbar);
+
+                    const textEl = el.querySelector('.text-element');
+                    const sizeInput = toolbar.querySelector('input[type="number"]');
+                    sizeInput.addEventListener('change', function () {
+                        textEl.style.fontSize = this.value + "px";
+                    });
+                    const colorInput = toolbar.querySelector('input[type="color"]');
+                    colorInput.addEventListener('input', function () {  // atualiza imediatamente
+                        textEl.style.color = this.value;
+                        sec.color = this.value;
+                    });
+
+                    el.addEventListener('focusin', function (e) {
+                        toolbar.style.display = 'flex';
+                    });
+                    el.addEventListener('focusout', function (e) {
+                        setTimeout(() => {
+                            if (!el.contains(document.activeElement)) {
+                                toolbar.style.display = 'none';
+                                sec.content = el.querySelector('.text-element').innerText;
+                                sec.size = el.querySelector('.toolbar input[type="number"]').value;
+                                sec.color = el.querySelector('.toolbar input[type="color"]').value;
+                            }
+                        }, 0);
+                    });
+
+                    if (sec.bold) {
+                        textEl.style.fontWeight = "bold";
+                        const boldBtn = toolbar.querySelector('button');
+                        if (boldBtn) boldBtn.classList.add('active');
+                    }
+
+                } else if (sec.type === 'imagem') {
+                    // Define o alinhamento da imagem via margem
+                    let marginStyle = "0 auto"; // centralizado por padrão
+                    if (sec.imgAlign === "left") {
+                        marginStyle = "0";
+                    } else if (sec.imgAlign === "right") {
+                        marginStyle = "0 0 0 auto";
+                    }
+                    el.innerHTML = `<img class="image-element" src="${sec.image}" style="width:${sec.imgWidth}px; height:${sec.imgHeight}px; margin:${marginStyle};">`;
+
+                    const imageToolbar = document.createElement('div');
+                    imageToolbar.className = "image-toolbar";
+                    imageToolbar.innerHTML = `Largura: <input type="number" value="${sec.imgWidth}" oninput="updateImageWidth(this)" style="width:60px;">Altura: <input type="number" value="${sec.imgHeight}" oninput="updateImageHeight(this)" style="width:60px;"><button onclick="setImageAlign(this, 'left')">Esquerda</button><button onclick="setImageAlign(this, 'center')">Centralizar</button><button onclick="setImageAlign(this, 'right')">Direita</button><label style="margin-left: 10px;"> <input type="checkbox" id="proportional-resize-checkbox" onclick="toggleProportionalResize(this)" ${sec.proportionalResize ? 'checked' : ''}> Proporcional </label><button onclick="deleteElement(this)">Excluir Imagem</button>`;
+                    el.appendChild(imageToolbar);
+
+                    const imageEl = el.querySelector('.image-element');
+
+                    el.addEventListener('focusin', function (e) {
+                        imageToolbar.style.display = 'block';
+                        imageEl.classList.add('selected');
+                    });
+                    el.addEventListener('focusout', function (e) {
+                        setTimeout(() => {
+                            if (!el.contains(document.activeElement)) {
+                                imageToolbar.style.display = 'none';
+                                imageEl.classList.remove('selected');
+                            }
+                        }, 0);
+                    });
+                    el.addEventListener('click', function (e) {
+                        imageToolbar.style.display = 'block';
+                        imageEl.classList.add('selected');
+                        el.focus();
+                    });
+                }  else if (sec.type === 'link') {
+                    // **MODIFICADO - RENDERIZAÇÃO DE LINK**
+                    let linkElement = `<a href="${sec.url}" class="link-element" target="_blank" style="text-align: ${sec.align || 'center'}; display: block;">${sec.text}</a>`;
+                    el.innerHTML = linkElement;
+                    const linkToolbar = document.createElement('div');
+                    linkToolbar.className = "link-toolbar";
+                    linkToolbar.innerHTML = `Texto: <input type="text" value="${sec.text}">
+                                                                        URL: <input type="url" value="${sec.url}">
+                                                                        <button onclick="setLinkAlign(this, 'left')">Esquerda</button>
+                                                                        <button onclick="setLinkAlign(this, 'center')">Centralizar</button>
+                                                                        <button onclick="setLinkAlign(this, 'right')">Direita</button>
+                                                                        <button onclick="deleteElement(this)">Excluir</button>`;
+                    el.appendChild(linkToolbar);
+
+                    const linkEl = el.querySelector('.link-element');
+                    linkEl.addEventListener('click', function(e) {
+                        // Desseleciona qualquer link selecionado anteriormente
+                        document.querySelectorAll('.link-element.selected').forEach(l => l.classList.remove('selected'));
+                        linkEl.classList.add('selected'); // Seleciona o link atual
+                        linkToolbar.style.display = 'block'; // Mostra a toolbar do link
+                        e.stopPropagation(); // Impede que o clique se propague
+                    });
+
+                    const textInput = linkToolbar.querySelector('input[type="text"]');
+                    textInput.addEventListener('change', function() { updateLinkText(this); });
+                    const urlInput = linkToolbar.querySelector('input[type="url"]');
+                    urlInput.addEventListener('change', function() { updateLinkUrl(this); });
+                }
+
+                block.appendChild(el);
+                const bar = createAddBar(index + 1);
+                block.appendChild(bar);
+                editorContainer.appendChild(block);
+            });
+
+            if (project.sections.length === 0) {
+                editorContainer.appendChild(createAddBar(0));
+            }
+        }
+
+        function toggleProportionalResize(checkbox) {
+            const editorEl = checkbox.closest('.editor-element');
+            const index = Array.from(document.querySelectorAll('.editor-element')).indexOf(editorEl);
+            const sec = project.sections[index];
+            sec.proportionalResize = checkbox.checked;
+            console.log(`Redimensionamento proporcional para a seção ${index}: ${sec.proportionalResize}`); // ADICIONADO console.log
+        }
+
+        // MODIFICADO - LINK - Função para adicionar elemento de Link
+        function addLinkElement(index) {
+            const newSec = { type: 'link', url: 'http://', text: 'Link', align: 'center' }; // URL padrão e texto
+            project.sections.splice(index, 0, newSec);
+            renderEditor();
+        }
+
+
+        function addImageElement(index) {
+            const fileInput = document.createElement('input');
+            fileInput.type = 'file';
+            fileInput.accept = 'image/*';
+            fileInput.style.display = 'none';
+            document.body.appendChild(fileInput);
+
+            fileInput.onchange = function (event) {
+                const file = event.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function (e) {
+                        const img = new Image(); // Cria um objeto Image para obter as dimensões
+                        img.onload = function() {
+                            // Agora que a imagem foi carregada, podemos acessar as dimensões naturais
+                            const originalWidth = img.naturalWidth;
+                            const originalHeight = img.naturalHeight;
+
+                            const newSec = {
+                                type: 'imagem',
+                                image: e.target.result,
+                                imgWidth: originalWidth,
+                                imgHeight: originalHeight,
+                                imgAlign: 'center',
+                                proportionalResize: true // **ADICIONADO - Propriedade para controle proporcional**
+                            };
+                            project.sections.splice(index, 0, newSec);
+                            renderEditor();
+                            document.body.removeChild(fileInput);
+                        };
+                        img.src = e.target.result; // Define a fonte da imagem para disparar o evento onload
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    document.body.removeChild(fileInput);
+                }
+            };
+
+            fileInput.click();
+        }
+
+        function addElement(type, index) {
+            const defaultAlign = type === 'paragrafo' ? "justify" : "center";
+            const newSec = { type: 'texto', style: type, content: "Novo " + type, size: 18, align: defaultAlign, bold: false, color: "#f5f5f5" };
+            project.sections.splice(index, 0, newSec);
+            renderEditor();
+        }
+
+        function toggleBold(btn) {
+            const editorEl = btn.closest('.editor-element');
+            const textEl = editorEl.querySelector('.text-element');
+            const index = Array.from(document.querySelectorAll('.editor-element')).indexOf(editorEl);
+            const sec = project.sections[index];
+            if (btn.classList.contains('active')) {
+                btn.classList.remove('active');
+                textEl.style.fontWeight = "normal";
+                sec.bold = false;
+            } else {
+                btn.classList.add('active');
+                textEl.style.fontWeight = "bold";
+                sec.bold = true;
+            }
+        }
+
+        function setAlign(btn, align) {
+            const editorEl = btn.closest('.editor-element');
+            const textEl = editorEl.querySelector('.text-element');
+            textEl.style.textAlign = align;
+            const index = Array.from(document.querySelectorAll('.editor-element')).indexOf(editorEl);
+            project.sections[index].align = align;
+        }
+
+        // Atualiza a largura da imagem sem re-renderizar todo o editor
+        function updateImageWidth(input) {
+            const editorEl = input.closest('.editor-element');
+            const imageEl = editorEl.querySelector('.image-element');
+            const index = Array.from(document.querySelectorAll('.editor-element')).indexOf(editorEl);
+            const newWidth = parseInt(input.value, 10);
+            const sec = project.sections[index]; // Obtém a seção para acessar proportionalResize
+
+            if (!isNaN(newWidth) && newWidth >= 50) {
+                if (sec.proportionalResize) { // Redimensionamento proporcional ativo
+                    const aspectRatio = sec.imgWidth / sec.imgHeight; // Proporção original (largura/altura)
+                    sec.imgWidth = newWidth;
+                    sec.imgHeight = newWidth / aspectRatio; // Calcula nova altura proporcionalmente
+                    imageEl.style.width = newWidth + "px";
+                    imageEl.style.height = sec.imgHeight + "px";
+                    // Atualiza o valor do input de altura para refletir a mudança
+                    const heightInput = editorEl.querySelector('.image-toolbar input[type="number"]:nth-of-type(2)');
+                    if (heightInput) heightInput.value = Math.trunc(sec.imgHeight); // Arredonda para inteiro
+                } else { // Redimensionamento não proporcional
+                    sec.imgWidth = newWidth;
+                    imageEl.style.width = newWidth + "px";
+                }
+            }
+        }
+
+        // Atualiza a altura da imagem sem re-renderizar todo o editor
+        function updateImageHeight(input) {
+            const editorEl = input.closest('.editor-element');
+            const imageEl = editorEl.querySelector('.image-element');
+            const index = Array.from(document.querySelectorAll('.editor-element')).indexOf(editorEl);
+            const newHeight = parseInt(input.value, 10);
+            const sec = project.sections[index]; // Obtém a seção para acessar proportionalResize
+
+            if (!isNaN(newHeight) && newHeight >= 50) {
+                if (sec.proportionalResize) { // Redimensionamento proporcional ativo
+                    const aspectRatio = sec.imgWidth / sec.imgHeight; // Proporção original (largura/altura)
+                    sec.imgHeight = newHeight;
+                    sec.imgWidth = newHeight * aspectRatio; // Calcula nova largura proporcionalmente
+                    imageEl.style.height = newHeight + "px";
+                    imageEl.style.width = sec.imgWidth + "px";
+                    // Atualiza o valor do input de largura para refletir a mudança
+                    const widthInput = editorEl.querySelector('.image-toolbar input[type="number"]:nth-of-type(1)');
+                    if (widthInput) widthInput.value = Math.trunc(sec.imgWidth); // Arredonda para inteiro
+
+                } else { // Redimensionamento não proporcional
+                    sec.imgHeight = newHeight;
+                    imageEl.style.height = newHeight + "px";
+                }
+            }
+        }
+
+        // MODIFICADO - LINK - Funções para atualizar propriedades do link
+        function updateLinkText(input) {
+            const editorEl = input.closest('.editor-element');
+            const linkEl = editorEl.querySelector('.link-element');
+            const index = Array.from(document.querySelectorAll('.editor-element')).indexOf(editorEl);
+            project.sections[index].text = input.value;
+            if(linkEl) {
+                linkEl.innerText = input.value || 'Link'; // Define 'Link' como padrão se vazio
+            }
+        }
+
+        function updateLinkUrl(input) {
+            const editorEl = input.closest('.editor-element');
+            const linkEl = editorEl.querySelector('.link-element');
+            const index = Array.from(document.querySelectorAll('.editor-element')).indexOf(editorEl);
+            project.sections[index].url = input.value;
+            if(linkEl) {
+                linkEl.href = input.value;
+            }
+        }
+
+        // MODIFICADO - LINK - Função para definir alinhamento do link (centralizado, esquerdo, direito)
+        function setLinkAlign(btn, align) {
+            const editorEl = btn.closest('.editor-element');
+            const linkEl = editorEl.querySelector('.link-element');
+            const index = Array.from(document.querySelectorAll('.editor-element')).indexOf(editorEl);
+            project.sections[index].align = align;
+            if (align === 'left') {
+                linkEl.style.textAlign = 'left';
+            } else if (align === 'center') {
+                linkEl.style.textAlign = 'center';
+            } else if (align === 'right') {
+                linkEl.style.textAlign = 'right';
+            }
+        }
+
+
+        function setImageAlign(btn, align) {
+            const editorEl = btn.closest('.editor-element');
+            const index = Array.from(document.querySelectorAll('.editor-element')).indexOf(editorEl);
+            project.sections[index].imgAlign = align;
+            renderEditor(); // Re-renders the editor
+        }
+
+        function deleteElement(btn) {
+            const blockEl = btn.closest('.editor-block');
+            const index = Array.from(document.querySelectorAll('.editor-block')).indexOf(blockEl);
+            project.sections.splice(index, 1);
+            renderEditor();
+        }
+
+        document.getElementById('save-editor-btn').addEventListener('click', function () {
+            // Percorre cada editor-block na ordem em que foram renderizados
+            document.querySelectorAll('.editor-block').forEach((block, i) => {
+                const sec = project.sections[i];
+                // Atualiza os dados conforme o tipo de seção
+                if (sec.type === 'texto') {
+                    const textEl = block.querySelector('.project-section-text');
+                    const toolbar = block.querySelector('.toolbar');
+                    if (textEl && toolbar) {
+                        sec.content = textEl.innerHTML;
+                        sec.size = toolbar.querySelector('input[type="number"]').value;
+                        sec.color = toolbar.querySelector('input[type="color"]').value;
+                    }
+                } else if (sec.type === 'link') {
+                    const linkToolbar = block.querySelector('.link-toolbar');
+                    if (linkToolbar) {
+                        sec.text = linkToolbar.querySelector('input[type="text"]').value;
+                        sec.url = linkToolbar.querySelector('input[type="url"]').value;
+                        sec.align = sec.align || 'center';
+                    }
+                }
+                // Para seções do tipo imagem ou outros, você pode adicionar condições semelhantes se necessário
+            });
+            save(); // Salva o projeto atualizado no localStorage
+            alert("Projeto salvo!");
+        });
+        
+
+        // Listener global para esconder as toolbars de imagem e link ao clicar fora
+        document.addEventListener('click', function(event) {
+            document.querySelectorAll('.editor-element').forEach(function(el) {
+                // Para imagem
+                if (el.querySelector('.image-element')) {
+                    if (!el.contains(event.target)) {
+                        const imageToolbar = el.querySelector('.image-toolbar');
+                        const imageEl = el.querySelector('.image-element');
+                        if (imageToolbar) imageToolbar.style.display = 'none';
+                        if (imageEl) imageEl.classList.remove('selected');
+                    }
+                }
+                // MODIFICADO - LINK - Esconder toolbar de link ao clicar fora
+                if (el.querySelector('.link-element')) {
+                    if (!el.contains(event.target)) {
+                        const linkToolbar = el.querySelector('.link-toolbar');
+                        const linkEl = el.querySelector('.link-element');
+                        if (linkToolbar) linkToolbar.style.display = 'none';
+                        if (linkEl) linkEl.classList.remove('selected');
+                    }
+                }
+            });
+        });
+
+
+    </script>
+</body>
+</html>

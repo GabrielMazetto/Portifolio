@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Split JSON - Separador de Projetos</title>
+    <style>
+        :root {
+            --fundo-principal: #2c2c2c;
+            --fundo-secundario: #3a3a3a;
+            --texto-claro: #f5f5f5;
+            --destaque: #cccccc;
+            --sombra: rgba(0, 0, 0, 0.1);
+            --tag-bg: #555;
+            --tag-selected-bg: #fff;
+            --tag-selected-text: #555;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: var(--fundo-principal);
+            color: var(--texto-claro);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .container {
+            background-color: var(--fundo-secundario);
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px var(--sombra);
+            width: 80%;
+            max-width: 600px;
+            text-align: center;
+        }
+        h1 {
+            color: var(--texto-claro);
+            margin-bottom: 20px;
+        }
+        .input-group {
+            margin-bottom: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            width: 100%;
+        }
+        .input-group label {
+            margin-bottom: 5px;
+            font-weight: bold;
+            text-align: left;
+            color: var(--texto-claro);
+            width: 100%;
+        }
+        .input-group input[type="text"],
+        .input-group input[type="number"] {
+            padding: 10px;
+            border-radius: 4px;
+            border: 1px solid var(--destaque);
+            background-color: var(--fundo-principal);
+            color: var(--texto-claro);
+            width: calc(100% - 22px);
+            margin-bottom: 10px;
+        }
+        button {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 4px;
+            background-color: var(--destaque);
+            color: var(--fundo-principal);
+            cursor: pointer;
+            font-size: 1em;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #b3b3b3; /* Cor de hover ligeiramente mais clara que --destaque */
+        }
+        #download-status {
+            margin-top: 20px;
+            font-weight: bold;
+            color: var(--texto-claro);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Split JSON - Separador de Projetos</h1>
+        <div class="input-group">
+            <label for="jsonFileName">Nome do Arquivo JSON Completo:</label>
+            <input type="text" id="jsonFileName" value="projects.json" placeholder="Ex: projects.json">
+        </div>
+        <div class="input-group">
+            <label for="numberOfJsonFiles">Número de Arquivos JSON a Criar (Máximo):</label>
+            <input type="number" id="numberOfJsonFiles" value="1" min="1" placeholder="Ex: 1, 2, 3...">
+        </div>
+        <button id="splitButton">Gerar e Baixar JSONs Particionados</button>
+        <div id="download-status">
+            </div>
+    </div>
+
+    <script>
+        document.getElementById('splitButton').addEventListener('click', splitAndDownloadJson);
+
+        async function splitAndDownloadJson() {
+            const jsonFileName = document.getElementById('jsonFileName').value;
+            const numberOfJsonFiles = parseInt(document.getElementById('numberOfJsonFiles').value, 10); // Alterado para numberOfJsonFiles
+            const downloadStatus = document.getElementById('download-status');
+
+            if (!jsonFileName) {
+                alert("Por favor, insira o nome do arquivo JSON.");
+                return;
+            }
+
+            if (isNaN(numberOfJsonFiles) || numberOfJsonFiles < 1) { // Alterado para numberOfJsonFiles
+                alert("Por favor, insira um número válido de arquivos JSON (mínimo 1).");
+                return;
+            }
+
+            downloadStatus.textContent = "Carregando e processando JSON...";
+
+            try {
+                const response = await fetch(jsonFileName);
+                if (!response.ok) {
+                    throw new Error(`Erro ao carregar ${jsonFileName}: ${response.statusText}`);
+                }
+                const completeProjects = await response.json();
+
+                if (!Array.isArray(completeProjects)) {
+                    throw new Error("O conteúdo do JSON não é um array de projetos.");
+                }
+
+                if (completeProjects.length === 0) {
+                    downloadStatus.textContent = "Nenhum projeto encontrado no JSON para dividir.";
+                    return;
+                }
+
+                const totalProjects = completeProjects.length;
+                // MODIFICADO - Calcula projetos por arquivo com base no número de arquivos desejado
+                const projectsPerFile = Math.ceil(totalProjects / numberOfJsonFiles);
+                downloadStatus.textContent = `Dividindo em até ${numberOfJsonFiles} arquivos...`; // Mensagem atualizada
+
+                for (let i = 0; i < numberOfJsonFiles; i++) { // Alterado para numberOfJsonFiles no loop
+                    const start = i * projectsPerFile;
+                    const end = start + projectsPerFile;
+                    const projectPart = completeProjects.slice(start, end);
+                    if (projectPart.length === 0) break; // Para o loop se não houver mais projetos
+                    const jsonPart = JSON.stringify(projectPart, null, 2);
+                    const fileName = `projects_part_${i + 1}.json`;
+                    download(fileName, jsonPart);
+                    downloadStatus.textContent = `Arquivo ${i + 1} de ${numberOfJsonFiles} baixado.`; // Mensagem atualizada
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                }
+
+                downloadStatus.textContent = "Download de todos os arquivos concluído.";
+
+
+            } catch (error) {
+                console.error("Erro ao processar JSON:", error);
+                downloadStatus.textContent = `Erro ao processar JSON: ${error.message}`;
+                alert(`Erro ao processar JSON: ${error.message}`);
+            }
+        }
+
+
+        const download = (name, content) => {
+            const type = name.endsWith('.css')
+                ? "text/css"
+                : name.endsWith('.js') ? "application/javascript" : "application/json";
+            const blob = new Blob([content], { type });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = name;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(a.href);
+        };
+    </script>
+</body>
+</html>
